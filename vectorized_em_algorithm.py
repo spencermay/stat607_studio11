@@ -40,15 +40,15 @@ class GaussianMixtureModelVectorized(GaussianMixtureModel):
     def _m_step(self, X, responsibilities):
         """Update the weights, means, and covariance matrices of all components."""
         n_samples, n_features = X.shape
-        n_k = _todo("Compute the effective count for each component.")  # (K,)
-        weights = _todo("Compute the mixing proportions.")              # (K,)
-        means = _todo("Compute the weighted component means.")          # (K, d)
+        n_k = np.sum(responsibilities, axis=0)  # (K,)
+        weights = n_k / n_samples # (K,)
+        means = np.einsum("ik,id->kd",responsibilities, X) # (K, d)
 
         covariances = np.empty((self.n_components, n_features, n_features))
         ridge = 1e-6 * np.eye(n_features)  # Matches the covariance update in the starter.
         for k in range(self.n_components):
             centered = X - means[k]
-            covariances[k] = _todo("Compute the weighted covariance for component k.")
+            covariances[k] = np.einsum("i,ji->ji", responsibilities[:,k], np.outer(centered, centered))
             covariances[k] += ridge
 
         self._set_parameters(means, covariances, weights)
