@@ -46,17 +46,32 @@ class GaussianMixtureModelVectorized(GaussianMixtureModel):
     def _m_step(self, X, responsibilities):
         """Update the weights, means, and covariance matrices of all components."""
         n_samples, n_features = X.shape
-        n_k = np.sum(responsibilities, axis=0)  # (K,)
-        weights = n_k / n_samples # (K,)
-        means = np.einsum("ik,id->kd",responsibilities, X) # (K, d)
-
+        n_k = np.sum(responsibilities, axis=0)
+        weights = n_k / n_samples
+        means = np.einsum("ik,id->kd",responsibilities, X)/n_k
+        
         covariances = np.empty((self.n_components, n_features, n_features))
         ridge = 1e-6 * np.eye(n_features)  # Matches the covariance update in the starter.
         for k in range(self.n_components):
             centered = X - means[k]
-            # print(responsibilities[:,k].shape, np.outer(centered, centered).shape)
-            covariances[k] = np.sum(responsibilities[:,k][:,np.newaxis, np.newaxis] *np.outer(centered[k], centered[k]), axis=0)
+            covariances[k] = np.einsum("i,ij,ik->jk", responsibilities[:,k], centered, centered) / n_k
             covariances[k] += ridge
+
+        # n_k = np.sum(responsibilities, axis=0)  # (K,)
+        # weights = n_k / n_samples # (K,)
+        # means = np.einsum("ik,id->kd",responsibilities, X)/n_samples # (K, d)
+
+        # covariances = np.empty((self.n_components, n_features, n_features))
+        # ridge = 1e-6 * np.eye(n_features)  # Matches the covariance update in the starter.
+        # for k in range(self.n_components):
+        #     centered = X - means[k]
+        #     # print(responsibilities[:,k].shape, np.outer(centered, centered).shape)
+        #     # print(responsibilities[:,k].shape, centered[:,k].shape)
+        #     # covariances[k] = np.sum(responsibilities[:,k][:,np.newaxis, np.newaxis] *np.outer(centered[k], centered[k]), axis=0)
+        #     # covariances[k] = np.einsum("i,ij,ik->jk", responsibilities[:,k], centered, centered)
+        #     outer_products = centered[:, :, np.newaxis] * centered[:, np.newaxis, :]
+        #     covariances[k] = np.sum(responsibilities[:, k][:, np.newaxis, np.newaxis] * outer_products, axis=0)/n_features
+        #     covariances[k] += ridge
 
         self._set_parameters(means, covariances, weights)
 
