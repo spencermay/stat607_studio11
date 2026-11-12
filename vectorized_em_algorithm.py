@@ -48,7 +48,8 @@ class GaussianMixtureModelVectorized(GaussianMixtureModel):
         ridge = 1e-6 * np.eye(n_features)  # Matches the covariance update in the starter.
         for k in range(self.n_components):
             centered = X - means[k]
-            covariances[k] = np.einsum("i,ji->ji", responsibilities[:,k], np.outer(centered, centered))
+            # print(responsibilities[:,k].shape, np.outer(centered, centered).shape)
+            covariances[k] = np.sum(responsibilities[:,k][:,np.newaxis, np.newaxis] *np.outer(centered[k], centered[k]), axis=0)
             covariances[k] += ridge
 
         self._set_parameters(means, covariances, weights)
