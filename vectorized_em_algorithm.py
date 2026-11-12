@@ -28,8 +28,8 @@ class GaussianMixtureModelVectorized(GaussianMixtureModel):
             # rows of X using self.pi_[k], self.mu_[k], and self.cov_[k].
             # In Exercise 2, compute the log-weighted density using logpdf.
 
-            terms[:, k] = self.pi_[k] * multivariate_normal.pdf(X, mean = self.mu_[k], cov = self.cov_[k])
-            # terms[:, k] = np.log(self.pi_[k]) + multivariate_normal.logpdf(X, mean=self.mu_[k], cov=self.cov_[k])
+            # terms[:, k] = self.pi_[k] * multivariate_normal.pdf(X, mean = self.mu_[k], cov = self.cov_[k])
+            terms[:, k] = np.log(self.pi_[k]) + multivariate_normal.logpdf(X, mean=self.mu_[k], cov=self.cov_[k])
         return terms
 
     def _e_step(self, X):
@@ -38,9 +38,9 @@ class GaussianMixtureModelVectorized(GaussianMixtureModel):
         # In Exercise 1, normalize each observation's row to sum to one.
         # In Exercise 2, use logsumexp and return probabilities on the original scale.
         
-        return terms / terms.sum(axis=1, keepdims=True)
-        # log_resp = terms - logsumexp(terms, axis=1, keepdims=True)
-        # return np.exp(log_resp)
+        # return terms / terms.sum(axis=1, keepdims=True)
+        log_resp = terms - logsumexp(terms, axis=1, keepdims=True)
+        return np.exp(log_resp)
 
 
     def _m_step(self, X, responsibilities):
@@ -57,22 +57,6 @@ class GaussianMixtureModelVectorized(GaussianMixtureModel):
             covariances[k] = np.einsum("i,ij,ik->jk", responsibilities[:,k], centered, centered) / n_k
             covariances[k] += ridge
 
-        # n_k = np.sum(responsibilities, axis=0)  # (K,)
-        # weights = n_k / n_samples # (K,)
-        # means = np.einsum("ik,id->kd",responsibilities, X)/n_samples # (K, d)
-
-        # covariances = np.empty((self.n_components, n_features, n_features))
-        # ridge = 1e-6 * np.eye(n_features)  # Matches the covariance update in the starter.
-        # for k in range(self.n_components):
-        #     centered = X - means[k]
-        #     # print(responsibilities[:,k].shape, np.outer(centered, centered).shape)
-        #     # print(responsibilities[:,k].shape, centered[:,k].shape)
-        #     # covariances[k] = np.sum(responsibilities[:,k][:,np.newaxis, np.newaxis] *np.outer(centered[k], centered[k]), axis=0)
-        #     # covariances[k] = np.einsum("i,ij,ik->jk", responsibilities[:,k], centered, centered)
-        #     outer_products = centered[:, :, np.newaxis] * centered[:, np.newaxis, :]
-        #     covariances[k] = np.sum(responsibilities[:, k][:, np.newaxis, np.newaxis] * outer_products, axis=0)/n_features
-        #     covariances[k] += ridge
-
         self._set_parameters(means, covariances, weights)
 
     def _compute_log_likelihood(self, X):
@@ -80,4 +64,6 @@ class GaussianMixtureModelVectorized(GaussianMixtureModel):
         terms = self._component_terms(X)
         # In Exercise 1, combine the densities for each observation, then take logs.
         # In Exercise 2, combine the log-weighted densities using logsumexp.
-        return np.sum(np.log(np.sum(terms,axis = 1)))
+        # return np.sum(np.log(np.sum(terms,axis = 1)))
+        
+        return np.sum(logsumexp(terms, axis=1))
