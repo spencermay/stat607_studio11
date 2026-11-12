@@ -58,4 +58,4 @@ class GaussianMixtureModelVectorized(GaussianMixtureModel):
         terms = self._component_terms(X)
         # In Exercise 1, combine the densities for each observation, then take logs.
         # In Exercise 2, combine the log-weighted densities using logsumexp.
-        return _todo("Sum the per-observation log likelihoods.")
+        return np.sum(np.log(np.sum(terms,axis = 1)))
