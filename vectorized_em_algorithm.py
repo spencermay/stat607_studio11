@@ -27,7 +27,9 @@ class GaussianMixtureModelVectorized(GaussianMixtureModel):
             # In Exercise 1, evaluate the weighted Gaussian density for all
             # rows of X using self.pi_[k], self.mu_[k], and self.cov_[k].
             # In Exercise 2, compute the log-weighted density using logpdf.
+
             terms[:, k] = self.pi_[k] * multivariate_normal.pdf(X, mean = self.mu_[k], cov = self.cov_[k])
+            # terms[:, k] = np.log(self.pi_[k]) + multivariate_normal.logpdf(X, mean=self.mu_[k], cov=self.cov_[k])
         return terms
 
     def _e_step(self, X):
@@ -35,7 +37,11 @@ class GaussianMixtureModelVectorized(GaussianMixtureModel):
         terms = self._component_terms(X)
         # In Exercise 1, normalize each observation's row to sum to one.
         # In Exercise 2, use logsumexp and return probabilities on the original scale.
+        
         return terms / terms.sum(axis=1, keepdims=True)
+        # log_resp = terms - logsumexp(terms, axis=1, keepdims=True)
+        # return np.exp(log_resp)
+
 
     def _m_step(self, X, responsibilities):
         """Update the weights, means, and covariance matrices of all components."""
